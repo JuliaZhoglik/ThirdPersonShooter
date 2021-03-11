@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
     [RequireComponent(typeof(CharacterController))] // контекст размещения метода RequireComponent
+    [RequireComponent(typeof(Animator))]
 public class RelativeMovement : MonoBehaviour
 {
     [SerializeField] private Transform target; // объект, относительно которого происходит перемещение
@@ -17,11 +18,13 @@ public class RelativeMovement : MonoBehaviour
     private CharacterController _charController;
     private float _vertSpeed; // вертикальная скорость
     private ControllerColliderHit _contact; // столкновения
+    private Animator _animator;
 
     private void Start()
     {
         _charController = GetComponent<CharacterController>();
         _vertSpeed = minFall;
+        _animator = GetComponent<Animator>();
     }
 
     void Update()
@@ -45,6 +48,8 @@ public class RelativeMovement : MonoBehaviour
             transform.rotation = Quaternion.Lerp(transform.rotation, direction, rotSpeed * Time.deltaTime); // плавный поворот
         }
 
+        _animator.SetFloat("Speed", movement.sqrMagnitude);
+
         bool hitGround = false;
         RaycastHit hit;
         // проверяем, падает ли персонаж
@@ -53,7 +58,7 @@ public class RelativeMovement : MonoBehaviour
             float check = (_charController.height + _charController.radius) / 1.9f; // расстояние, с которым производится сравнение - слегка выходит за нижнюю часть капсулы
             hitGround = hit.distance <= check;
         }
-
+        
         if (hitGround) // соприкасается ли с поверхностью 
         {
             if (Input.GetButtonDown("Jump"))
@@ -63,6 +68,7 @@ public class RelativeMovement : MonoBehaviour
             else
             {
                 _vertSpeed = minFall;
+                _animator.SetBool("Jumping", false);
             }
         }
         else
@@ -71,6 +77,10 @@ public class RelativeMovement : MonoBehaviour
             if (_vertSpeed < terminalVelocity)
             {
                 _vertSpeed = terminalVelocity;
+            }
+            if (_contact != null)
+            {
+                _animator.SetBool("Jumping", true);
             }
 
             if (_charController.isGrounded)
